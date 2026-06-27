@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+@theme {
+  --color-space-dark: #020617; /* Slate 950 - Elegant deep dark blue/gray */
+  --color-glass-bg: rgba(15, 23, 42, 0.75); /* Slate 900 with glass effect */
+  --color-glass-border: rgba(255, 255, 255, 0.08);
+  --color-neon-cyan: #38bdf8; /* Sky 400 - Professional aviation blue */
+  --color-neon-purple: #a78bfa; /* Violet 400 - Elegant accent */
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: var(--color-space-dark);
+  color: white;
+  font-family: sans-serif;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Custom utilities for scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}

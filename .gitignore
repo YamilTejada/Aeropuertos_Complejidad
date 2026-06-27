@@ -1,0 +1,65 @@
+# Frontend (El gitignore que te da Vite , lo copias y pegas en un solo .gitignore global con la finalidad de subir todo el proyecto a GitHub)======
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+
+
+# Backend ==========
+
+# Python y Backend
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Entornos virtuales
+myenv/
+env/
+venv/
+.venv/
+
+# Variables de entorno
+.env
+.env.*
+
+# Base de datos local (si usas SQLite, por ejemplo)
+*.db
+*.sqlite3
+
+# Entornos de desarrollo
+.vscode/
+.idea/
+
+
+#Gitignore Final  (Recomendado)
+
+# Frontend
+node_modules/
+dist/
+
+# Backend
+__pycache__/
+myenv/
+.env
