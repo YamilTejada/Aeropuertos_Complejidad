@@ -110,6 +110,8 @@ function App() {
         routeNodes={routeResult?.ruta_optima || []} 
         sourceCountry={sourceCountry}
         destCountry={destCountry}
+        source={source}
+        destination={destination}
         
         // MST Props
         appMode={appMode}

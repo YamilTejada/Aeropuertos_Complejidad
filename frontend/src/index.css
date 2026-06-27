@@ -32,7 +32,23 @@ body {
   background: rgba(255, 255, 255, 0.3);
 }
 
+@property --scrollbar-bg {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(255, 255, 255, 0.1);
+}
+
 /* Custom utilities for scrollbar */
+.custom-scrollbar {
+  --scrollbar-bg: rgba(255, 255, 255, 0.1);
+  transition: --scrollbar-bg 1.5s ease-out;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-bg) !important;
+  border-radius: 4px;
 }

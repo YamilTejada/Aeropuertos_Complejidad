@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import AutocompleteInput from './AutocompleteInput';
 import { PlaneTakeoff, ShieldAlert, Route, MapPin, RefreshCw, Zap, Ruler, Network, Globe } from 'lucide-react';
 
@@ -32,8 +32,24 @@ export default function ControlPanel({
       return ap ? ap.country : '';
   };
 
+  const panelRef = useRef(null);
+
+  useEffect(() => {
+      if (routeResult) {
+          // Scroll automático para los resultados de búsqueda de ruta
+          setTimeout(() => {
+              if (panelRef.current) {
+                  panelRef.current.scrollTo({
+                      top: panelRef.current.scrollHeight,
+                      behavior: 'smooth'
+                  });
+              }
+          }, 300);
+      }
+  }, [routeResult]);
+
   return (
-    <div className="absolute top-6 left-6 z-10 w-[400px] bg-glass-bg backdrop-blur-xl border border-glass-border p-6 rounded-2xl shadow-2xl overflow-y-auto max-h-[90vh] custom-scrollbar">
+    <div ref={panelRef} className="absolute top-6 left-6 z-10 w-[420px] min-w-[420px] bg-glass-bg backdrop-blur-xl border border-glass-border p-6 rounded-2xl shadow-2xl overflow-y-auto max-h-[96vh] custom-scrollbar">
       
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
@@ -171,11 +187,16 @@ export default function ControlPanel({
                                 <p className="text-xl font-mono text-neon-purple">{routeResult.distancia_total_km?.toLocaleString()} <span className="text-xs text-gray-500">km</span></p>
                             </div>
                         </div>
-                        <div className="bg-white/5 p-3 rounded-lg border border-white/5">
+                        <div className="bg-white/5 p-4 rounded-xl border border-white/5">
                                 <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2">Algoritmo Utilizado</p>
-                                <p className="text-xs text-gray-200 flex items-center">
+                                <p className="text-[13px] font-bold text-white flex items-center mb-2">
                                     <span className={`w-2 h-2 rounded-full mr-2 ${routeResult.algoritmo_usado.includes('BFS') ? 'bg-neon-cyan' : 'bg-neon-purple'}`}></span>
                                     {routeResult.algoritmo_usado}
+                                </p>
+                                <p className="text-[11px] text-slate-400 leading-relaxed mt-1">
+                                    {routeResult.algoritmo_usado.includes('BFS') 
+                                        ? "Se ha calculado la ruta priorizando la menor cantidad de paradas o escalas posibles, ideal para vuelos más directos sin importar la distancia física." 
+                                        : "Se ha calculado la ruta priorizando la distancia geográfica más corta, minimizando el recorrido en kilómetros independientemente de la cantidad de escalas."}
                                 </p>
                         </div>
                         <div className="bg-white/5 p-4 rounded-xl border border-white/10 relative mt-4">

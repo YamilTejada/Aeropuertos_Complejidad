@@ -14,7 +14,7 @@ export default function MapVisualization({
     airports, 
     
     // Routing Props
-    routeNodes, sourceCountry, destCountry,
+    routeNodes, sourceCountry, destCountry, source, destination,
     
     // MST Props
     appMode, mstEdges, mstCountry
@@ -57,6 +57,44 @@ export default function MapVisualization({
   // ==========================================
   // CAPA DE PUNTOS (AEROPUERTOS)
   // ==========================================
+  const intensity = (Math.sin(time) + 1) / 2; // 0 to 1
+
+  // Capa de Resplandor (Glow)
+  const airportGlowLayer = new ScatterplotLayer({
+    id: 'airports-glow-layer',
+    data: validAirports,
+    pickable: false,
+    opacity: 0.2 + (intensity * 0.3), // Animación de pulsación
+    stroked: false,
+    filled: true,
+    radiusScale: 1,
+    radiusMinPixels: 0,
+    parameters: { depthTest: false, blend: true },
+    getPosition: d => [d.longitude, d.latitude],
+    getRadius: d => {
+        if (appMode === 'routing') {
+            if (source && d.iata === source) return 80000;
+            if (destination && d.iata === destination) return 80000;
+        } else if (appMode === 'mst') {
+            if (mstCountry && d.country === mstCountry) return 60000;
+        }
+        return 0; // Sin resplandor para los inactivos
+    },
+    getFillColor: d => {
+        if (appMode === 'routing') {
+            if (source && d.iata === source) return [56, 189, 248, 255]; // Cian Neón
+            if (destination && d.iata === destination) return [167, 139, 250, 255]; // Morado Neón
+        } else if (appMode === 'mst') {
+            if (mstCountry && d.country === mstCountry) return [251, 191, 36, 150]; // Amarillo Neón
+        }
+        return [0, 0, 0, 0];
+    },
+    updateTriggers: {
+        getRadius: [appMode, sourceCountry, destCountry, mstCountry, source, destination],
+        getFillColor: [appMode, sourceCountry, destCountry, mstCountry, source, destination]
+    }
+  });
+
   const airportsLayer = new ScatterplotLayer({
     id: 'airports-layer',
     data: validAirports, 
@@ -71,7 +109,8 @@ export default function MapVisualization({
     getPosition: d => [d.longitude, d.latitude],
     getRadius: d => {
         if (appMode === 'routing') {
-            if (d.country === sourceCountry || d.country === destCountry) return 40000;
+            if (source && d.iata === source) return 40000;
+            if (destination && d.iata === destination) return 40000;
         } else if (appMode === 'mst') {
             if (mstCountry && d.country === mstCountry) return 30000;
             if (!mstCountry) return 20000; // Red global
@@ -80,23 +119,25 @@ export default function MapVisualization({
     },
     getFillColor: d => {
         if (appMode === 'routing') {
-            if (d.country === sourceCountry) return [56, 189, 248, 255]; 
-            if (d.country === destCountry) return [167, 139, 250, 255]; 
+            if (source && d.iata === source) return [255, 255, 255, 255]; 
+            if (destination && d.iata === destination) return [255, 255, 255, 255]; 
             if (sourceCountry || destCountry) return [148, 163, 184, 80]; 
             return [255, 255, 255, 120]; 
         } else if (appMode === 'mst') {
-            if (mstCountry && d.country === mstCountry) return [251, 191, 36, 255]; // Amber 400
+            if (mstCountry && d.country === mstCountry) return [255, 255, 255, 255]; // Núcleo blanco
             if (mstCountry && d.country !== mstCountry) return [148, 163, 184, 40]; // Super atenuado
-            return [251, 191, 36, 150]; // Global
+            return [255, 255, 255, 120]; // Blanco tenue para MST global
         }
         return [255, 255, 255, 120];
     },
+    updateTriggers: {
+        getRadius: [appMode, sourceCountry, destCountry, mstCountry, source, destination],
+        getFillColor: [appMode, sourceCountry, destCountry, mstCountry, source, destination]
+    }
   });
 
   const arcLayers = [];
   const textLayers = [];
-  
-  const intensity = (Math.sin(time) + 1) / 2; // 0 to 1
 
   // ==========================================
   // ARCOS PARA MODO ROUTING (BFS/Dijkstra)
@@ -205,7 +246,7 @@ export default function MapVisualization({
               id: 'mst-arcs-core',
               data: mstArcData,
               pickable: true,
-              getWidth: 2, // Fino pero visible
+              getWidth: 3.5, // Un poco más grueso para que se vea genial
               getSourcePosition: d => d.sourcePosition,
               getTargetPosition: d => d.targetPosition,
               getSourceColor: [251, 191, 36, 180], // Amber 400 con algo de transparencia
@@ -228,24 +269,100 @@ export default function MapVisualization({
     );
   }
 
+  const getTooltipContent = ({object}) => {
+    if (!object) return null;
+    
+    // Estilos principales del glassmorphism
+    const style = {
+      backgroundColor: 'rgba(15, 23, 42, 0.7)',
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
+      borderRadius: '16px',
+      boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.15)',
+      color: '#fff',
+      padding: '16px',
+      fontFamily: '"Inter", sans-serif',
+      fontSize: '14px',
+      pointerEvents: 'none',
+      minWidth: '240px',
+      transition: 'opacity 0.2s ease-out',
+      zIndex: 1000
+    };
+
+    if (object.name) {
+        return {
+          html: `
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #94A3B8; font-weight: 700;">
+                ${object.country}
+              </div>
+              <div style="font-weight: 800; font-size: 20px; color: #38BDF8; line-height: 1.1;">
+                ${object.city}
+              </div>
+              <div style="margin-top: 6px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <div style="display: flex; align-items: center; gap: 8px; color: #E2E8F0; font-weight: 500; font-size: 14px;">
+                  <span style="font-size: 18px; filter: drop-shadow(0 0 4px rgba(255,255,255,0.3));">✈️</span> 
+                  <span style="flex: 1;">${object.name}</span>
+                  <span style="background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.3); color: #FBBF24; padding: 2px 6px; border-radius: 6px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px;">
+                    ${object.iata}
+                  </span>
+                </div>
+              </div>
+              <div style="margin-top: 8px; font-size: 11px; color: #64748B; font-family: monospace; letter-spacing: 0.5px; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 6px; text-align: center;">
+                LAT <span style="color:#94A3B8">${object.latitude.toFixed(4)}</span> &nbsp;•&nbsp; LNG <span style="color:#94A3B8">${object.longitude.toFixed(4)}</span>
+              </div>
+            </div>
+          `,
+          style
+        };
+    }
+    
+    if (object.source && object.target && object.distance) {
+        return {
+          html: `
+             <div style="display: flex; flex-direction: column; gap: 8px; text-align: center;">
+              <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #FBBF24; font-weight: 700;">
+                Conexión de Red Óptima
+              </div>
+              <div style="font-weight: 800; font-size: 22px; color: #fff; display: flex; justify-content: center; align-items: center; gap: 12px; margin: 4px 0;">
+                ${object.source} <span style="color: #64748B; font-size: 16px;">➔</span> ${object.target}
+              </div>
+              <div style="margin-top: 4px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); color: #94A3B8; font-size: 13px;">
+                Distancia: <span style="color: #38BDF8; font-weight: 700; font-size: 15px; margin-left: 4px;">${object.distance.toLocaleString()} km</span>
+              </div>
+            </div>
+          `,
+          style
+        };
+    }
+    
+    if (object.source) {
+        return {
+          html: `
+             <div style="display: flex; flex-direction: column; gap: 8px; text-align: center;">
+              <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #38BDF8; font-weight: 700;">
+                Conexión de Vuelo
+              </div>
+              <div style="font-weight: 800; font-size: 22px; color: #fff; display: flex; justify-content: center; align-items: center; gap: 12px; margin: 4px 0;">
+                ${object.source} <span style="color: #64748B; font-size: 16px;">➔</span> ${object.target}
+              </div>
+            </div>
+          `,
+          style
+        };
+    }
+
+    return null;
+  };
+
   return (
     <div className="w-full h-full absolute top-0 left-0 bg-[#020617]">
       <DeckGL
         initialViewState={INITIAL_VIEW_STATE}
         controller={true}
-        layers={[landLayer, airportsLayer, ...arcLayers, ...textLayers]}
-        getTooltip={({object}) => {
-          if (!object) return null;
-          if (object.name) {
-              return `📌 ${object.city}, ${object.country}\n✈️ Aeropuerto: ${object.name} (${object.iata})\n📍 Lat: ${object.latitude.toFixed(4)}, Lng: ${object.longitude.toFixed(4)}`;
-          }
-          if (object.source && object.target && object.distance) {
-              // Tooltip para aristas MST
-              return `🕸️ Conexión de Red: ${object.source} ➔ ${object.target}\n📏 Distancia: ${object.distance.toLocaleString()} km`;
-          }
-          if (object.source) return `Vuelo: ${object.source} ➔ ${object.target}`;
-          return null;
-        }}
+        layers={[landLayer, airportGlowLayer, airportsLayer, ...arcLayers, ...textLayers]}
+        getTooltip={getTooltipContent}
       />
       
       <div className="absolute inset-0 pointer-events-none opacity-20 mix-blend-screen" 
